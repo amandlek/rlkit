@@ -135,8 +135,10 @@ def batch_square_vector(vector, M):
 
 
 def fanin_init(tensor):
+    # if isinstance(tensor, TorchVariable):
+    #     return fanin_init(tensor.data)
     if isinstance(tensor, TorchVariable):
-        return fanin_init(tensor.data)
+        tensor = tensor.data
     size = tensor.size()
     if len(size) == 2:
         fan_in = size[0]
@@ -185,7 +187,7 @@ def clip1(x):
 GPU wrappers
 """
 _use_gpu = False
-
+# _use_gpu = True
 
 def set_gpu_mode(mode):
     global _use_gpu
@@ -220,8 +222,10 @@ def from_numpy(*args, **kwargs):
 
 
 def get_numpy(tensor):
+    # if isinstance(tensor, TorchVariable):
+    #     return get_numpy(tensor.data)
     if isinstance(tensor, TorchVariable):
-        return get_numpy(tensor.data)
+        tensor = tensor.data
     if _use_gpu:
         return tensor.cpu().numpy()
     return tensor.numpy()

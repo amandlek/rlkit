@@ -5,6 +5,9 @@ import time
 import gtimer as gt
 import numpy as np
 
+import gym
+import MujocoManip as MM
+
 from rlkit.core import logger
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
 from rlkit.data_management.path_builder import PathBuilder
@@ -30,7 +33,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             render=False,
             save_replay_buffer=False,
             save_algorithm=False,
-            save_environment=True,
+            save_environment=False,
             eval_sampler=None,
             eval_policy=None,
             replay_buffer=None,
@@ -59,7 +62,11 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         :param eval_policy: Policy to evaluate with.
         :param replay_buffer:
         """
-        self.training_env = training_env or pickle.loads(pickle.dumps(env))
+
+        ### TODO: look at NormalizedBoxEnv, do we need it? ###
+
+        self.training_env = training_env or gym.make("HalfCheetah-v2")
+        # self.training_env = training_env or MM.make(env.__class__.__name__)
         self.exploration_policy = exploration_policy
         self.num_epochs = num_epochs
         self.num_env_steps_per_epoch = num_steps_per_epoch
@@ -110,7 +117,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self.pretrain()
         if start_epoch == 0:
             params = self.get_epoch_snapshot(-1)
-            logger.save_itr_params(-1, params)
+            #logger.save_itr_params(-1, params)
         self.training_mode(False)
         self._n_env_steps_total = start_epoch * self.num_env_steps_per_epoch
         gt.reset()

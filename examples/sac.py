@@ -12,13 +12,20 @@ from rlkit.launchers.launcher_util import setup_logger
 from rlkit.torch.sac.policies import TanhGaussianPolicy
 from rlkit.torch.sac.sac import SoftActorCritic
 from rlkit.torch.networks import FlattenMlp
+import rlkit.torch.pytorch_util as U
 
+
+# Sets the GPU mode.
+USE_GPU = False
+# USE_GPU = True
+U.set_gpu_mode(USE_GPU)
 
 def experiment(variant):
-    env = NormalizedBoxEnv(HalfCheetahEnv())
+    # env = NormalizedBoxEnv(HalfCheetahEnv())
     # Or for a specific version:
-    # import gym
-    # env = NormalizedBoxEnv(gym.make('HalfCheetah-v1'))
+    import gym
+    # env = NormalizedBoxEnv(gym.make('HalfCheetah-v2'))
+    env = gym.make('HalfCheetah-v2')
 
     obs_dim = int(np.prod(env.observation_space.shape))
     action_dim = int(np.prod(env.action_space.shape))
@@ -69,5 +76,5 @@ if __name__ == "__main__":
         ),
         net_size=300,
     )
-    setup_logger('name-of-experiment', variant=variant)
+    setup_logger('cheetah', variant=variant)
     experiment(variant)
