@@ -11,7 +11,8 @@ class MujocoManipEnv(object):
                            has_renderer=False, 
                            use_camera_obs=False,
                            ignore_done=True, 
-                           reward_shaping=True)
+                           reward_shaping=True,
+                           has_offscreen_renderer=False)
         if keys is None:
             keys = ['proprio', 'low-level', 
                     # 'cube_pos','gripper_to_cube','cyl_to_hole','angle', 't', 'd', 'hole_pos'
