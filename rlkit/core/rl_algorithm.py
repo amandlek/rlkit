@@ -6,7 +6,6 @@ import gtimer as gt
 import numpy as np
 
 import gym
-import MujocoManip as MM
 
 from rlkit.core import logger
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
@@ -14,6 +13,7 @@ from rlkit.data_management.path_builder import PathBuilder
 from rlkit.policies.base import ExplorationPolicy
 from rlkit.samplers.in_place import InPlacePathSampler
 
+from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
@@ -65,8 +65,8 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
 
         ### TODO: look at NormalizedBoxEnv, do we need it? ###
 
-        self.training_env = training_env or gym.make("HalfCheetah-v2")
-        # self.training_env = training_env or MM.make(env.__class__.__name__)
+        # self.training_env = training_env or gym.make("HalfCheetah-v2")
+        self.training_env = training_env or MujocoManipEnv(env.env.__class__.__name__)
         self.exploration_policy = exploration_policy
         self.num_epochs = num_epochs
         self.num_env_steps_per_epoch = num_steps_per_epoch

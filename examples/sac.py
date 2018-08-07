@@ -14,19 +14,23 @@ from rlkit.torch.sac.sac import SoftActorCritic
 from rlkit.torch.networks import FlattenMlp
 import rlkit.torch.pytorch_util as U
 
+from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 
 # Sets the GPU mode.
-USE_GPU = False
-# USE_GPU = True
+USE_GPU = True
 U.set_gpu_mode(USE_GPU)
+
+EXPERIMENT_NAME = "pegs_round"
+HORIZON = 250
 
 def experiment(variant):
     # env = NormalizedBoxEnv(HalfCheetahEnv())
     # Or for a specific version:
-    import gym
+    # import gym
     # env = NormalizedBoxEnv(gym.make('HalfCheetah-v2'))
-    env = gym.make('HalfCheetah-v2')
+    # env = gym.make('HalfCheetah-v2')
 
+    env = MujocoManipEnv("SawyerPegsRoundEnv") # wrap as a gym env
     obs_dim = int(np.prod(env.observation_space.shape))
     action_dim = int(np.prod(env.action_space.shape))
 
@@ -59,14 +63,15 @@ def experiment(variant):
 
 
 if __name__ == "__main__":
+
     # noinspection PyTypeChecker
     variant = dict(
         algo_params=dict(
-            num_epochs=1000,
-            num_steps_per_epoch=1000,
-            num_steps_per_eval=1000,
+            num_epochs=1000, 
+            num_steps_per_epoch=HORIZON, # number of env steps per epoch (just make this an episode?)
+            num_steps_per_eval=HORIZON, # number of steps in eval?
             batch_size=128,
-            max_path_length=999,
+            max_path_length=HORIZON - 1, # TODO: is this off by one? 
             discount=0.99,
 
             soft_target_tau=0.001,
@@ -76,5 +81,24 @@ if __name__ == "__main__":
         ),
         net_size=300,
     )
-    setup_logger('cheetah', variant=variant)
+
+    # # noinspection PyTypeChecker
+    # variant = dict(
+    #     algo_params=dict(
+    #         num_epochs=1000, 
+    #         num_steps_per_epoch=1000, # number of env steps per epoch (just make this an episode?)
+    #         num_steps_per_eval=1000, # number of steps in eval?
+    #         batch_size=128,
+    #         max_path_length=999, # TODO: is this off by one? 
+    #         discount=0.99,
+
+    #         soft_target_tau=0.001,
+    #         policy_lr=3E-4,
+    #         qf_lr=3E-4,
+    #         vf_lr=3E-4,
+    #     ),
+    #     net_size=300,
+    # )
+
+    setup_logger(EXPERIMENT_NAME, variant=variant)
     experiment(variant)

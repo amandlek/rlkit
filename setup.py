@@ -4,7 +4,11 @@ import sys
 setup(name='rlkit',
       packages=[package for package in find_packages()
                 if package.startswith('rlkit')],
-      install_requires=['gtimer'],
+      install_requires=['gtimer',
+                        'torch',
+                        'torchvision',
+                        'python-dateutil',
+                        'joblib'],
       description="Collection of reinforcement learning algorithms",
       author="Ajay Mandlekar",
       url='https://github.com/amandlek/rlkit',
