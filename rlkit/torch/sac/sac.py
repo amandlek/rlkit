@@ -71,9 +71,11 @@ class SoftActorCritic(TorchRLAlgorithm):
             lr=vf_lr,
         )
 
+        self.batch_reward_scale = kwargs.get('batch_reward_scale', 1.0)
+
     def _do_training(self):
         batch = self.get_batch()
-        rewards = batch['rewards']
+        rewards = batch['rewards'] * self.batch_reward_scale
         terminals = batch['terminals']
         obs = batch['observations']
         actions = batch['actions']

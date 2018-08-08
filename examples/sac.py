@@ -20,11 +20,13 @@ from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 USE_GPU = True
 U.set_gpu_mode(USE_GPU)
 
-EXPERIMENT_NAME = "lift-test"
+EXPERIMENT_NAME = "pegs-reward-scale-0.5-updates-100"
 HORIZON = 250
+UPDATES_PER_STEP = 100 # 1
+REWARD_SCALE = 0.5
 
-DEMO_PATH = None
-# DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
+# DEMO_PATH = None
+DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
 
 ACTION_SKIP = 1
 LR = 3E-4
@@ -36,7 +38,7 @@ def experiment(variant):
     # env = NormalizedBoxEnv(gym.make('HalfCheetah-v2'))
     # env = gym.make('HalfCheetah-v2')
 
-    env = MujocoManipEnv("SawyerLiftEnv") # wrap as a gym env
+    env = MujocoManipEnv("SawyerPegsRoundEnv") # wrap as a gym env
     obs_dim = int(np.prod(env.observation_space.shape))
     action_dim = int(np.prod(env.action_space.shape))
 
@@ -79,7 +81,7 @@ if __name__ == "__main__":
             num_steps_per_eval=HORIZON, # number of steps in eval?
             batch_size=128,
             max_path_length=HORIZON - 1, # TODO: is this off by one? 
-            num_updates_per_env_step=1,#100, # batch learning steps per train step
+            num_updates_per_env_step=UPDATES_PER_STEP, # batch learning steps per train step
             discount=0.99,
             soft_target_tau=0.001,
             policy_lr=LR,
@@ -88,6 +90,7 @@ if __name__ == "__main__":
             demo_path=DEMO_PATH, # path to demos
             action_skip=ACTION_SKIP, # number of env steps per policy action
             experiment_name=EXPERIMENT_NAME,
+            batch_reward_scale=REWARD_SCALE,
         ),
         net_size=300,
     )
