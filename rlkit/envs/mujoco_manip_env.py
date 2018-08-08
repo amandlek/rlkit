@@ -6,9 +6,9 @@ class MujocoManipEnv(object):
     """
     General wrapper to make the environment look like a gym environment.
     """
-    def __init__(self, name, keys=None):
+    def __init__(self, name, render=False, keys=None):
         self.env = MM.make(name, 
-                           has_renderer=False, 
+                           has_renderer=render, 
                            use_camera_obs=False,
                            ignore_done=True, 
                            reward_shaping=True,
@@ -56,5 +56,9 @@ class MujocoManipEnv(object):
     def step(self, action):
         ob_dict, reward, done, info = self.env.step(action)
         return self._flatten_obs(ob_dict), reward, done, info
+
+    def render(self):
+        self.env.viewer.set_camera(2)
+        self.env.render()
 
 

@@ -12,7 +12,9 @@ filename = str(uuid.uuid4())
 def simulate_policy(args):
     data = joblib.load(args.file)
     policy = data['policy']
-    env = data['env']
+    # env = data['env']
+    from rlkit.envs.mujoco_manip_env import MujocoManipEnv
+    env = MujocoManipEnv("SawyerLiftEnv", render=True)
     print("Policy loaded")
     if args.gpu:
         set_gpu_mode(True)

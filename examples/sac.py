@@ -20,7 +20,7 @@ from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 USE_GPU = True
 U.set_gpu_mode(USE_GPU)
 
-EXPERIMENT_NAME = "pegs-demo"
+EXPERIMENT_NAME = "pegs-demo-short-train"
 HORIZON = 250
 
 # DEMO_PATH = None
@@ -70,11 +70,12 @@ if __name__ == "__main__":
     # noinspection PyTypeChecker
     variant = dict(
         algo_params=dict(
-            num_epochs=1000, 
+            num_epochs=100000, 
             num_steps_per_epoch=HORIZON, # number of env steps per epoch (just make this an episode?)
             num_steps_per_eval=HORIZON, # number of steps in eval?
             batch_size=128,
             max_path_length=HORIZON - 1, # TODO: is this off by one? 
+            num_updates_per_env_step=100, # batch learning steps per train step
             discount=0.99,
             soft_target_tau=0.001,
             policy_lr=3E-4,
