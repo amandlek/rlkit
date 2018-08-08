@@ -31,6 +31,7 @@ class SoftActorCritic(TorchRLAlgorithm):
             plotter=None,
             render_eval_paths=False,
             eval_deterministic=True,
+            batch_reward_scale=1.0
             **kwargs
     ):
         if eval_deterministic:
@@ -71,7 +72,7 @@ class SoftActorCritic(TorchRLAlgorithm):
             lr=vf_lr,
         )
 
-        self.batch_reward_scale = kwargs.get('batch_reward_scale', 1.0)
+        self.batch_reward_scale = batch_reward_scale
 
     def _do_training(self):
         batch = self.get_batch()
