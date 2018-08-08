@@ -31,7 +31,7 @@ class SoftActorCritic(TorchRLAlgorithm):
             plotter=None,
             render_eval_paths=False,
             eval_deterministic=True,
-            batch_reward_scale=1.0
+            batch_reward_scale=1.0,
             **kwargs
     ):
         if eval_deterministic:
