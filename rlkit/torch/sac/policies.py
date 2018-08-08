@@ -120,6 +120,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
 class MakeDeterministic(Policy):
     def __init__(self, stochastic_policy):
         self.stochastic_policy = stochastic_policy
+        self.action_skip = self.stochastic_policy.action_skip # hacky af
 
     def get_action(self, observation):
         return self.stochastic_policy.get_action(observation,
