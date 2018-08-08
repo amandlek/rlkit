@@ -4,6 +4,7 @@ as if they came from a replay buffer.
 """
 
 import random
+import pickle
 import numpy as np
 
 class DemoSampler(object):
@@ -21,7 +22,7 @@ class DemoSampler(object):
         self.preload = preload
 
         with open(demo_path, "rb") as small_pkl:
-            self.offsets = pickle.load(demo_path)
+            self.offsets = pickle.load(small_pkl)[:-1] # offsets have one too many values
         assert(self.offsets[0] == 0)
 
         self.demo_big_file = open(demo_path.replace('.pkl', '.bkl'), "rb")
@@ -50,7 +51,7 @@ class DemoSampler(object):
             episode = pickle.load(self.demo_big_file)
             return random.choice(episode)
 
-    def get_batch(batch_size):
+    def get_batch(self, batch_size):
         """
         Returns a dictionary of batched (s, a, r, s', done) arrays.
         """
@@ -68,9 +69,9 @@ class DemoSampler(object):
         terminals = np.zeros((batch_size, 1), dtype='uint8')
 
         for i in range(batch_size):
-            o, a, no, r, t = choices[i]
+            o, a, r, no, t = choices[i]
             obs[i] = o
-            acs[i] = a
+            acs[i] = a[:self.action_dim] # fix this after fixing postproc
             next_obs[i] = no
             rewards[i] = r
             terminals[i] = int(t)

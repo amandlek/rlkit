@@ -2,6 +2,7 @@ import abc
 from collections import OrderedDict
 from typing import Iterable
 
+import time
 import numpy as np
 from torch.autograd import Variable
 
@@ -19,8 +20,14 @@ class TorchRLAlgorithm(RLAlgorithm, metaclass=abc.ABCMeta):
         self.render_eval_paths = render_eval_paths
         self.plotter = plotter
 
-    def get_batch(self):
-        batch = self.replay_buffer.random_batch(self.batch_size)
+    def get_batch(self, batch=None):
+        if self.demo_sampler is None:
+            batch = self.replay_buffer.random_batch(self.batch_size)
+        else:
+            # sample from demo buffer here
+            # t = time.time()
+            batch = self.demo_sampler.get_batch(self.batch_size)
+            # print("sample batch took {} seconds".format(time.time() - t))
         return np_to_pytorch_batch(batch)
 
     @property

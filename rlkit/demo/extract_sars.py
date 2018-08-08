@@ -11,9 +11,9 @@ import numpy as np
 from MujocoManip.miscellaneous.utils import postprocess_model_xml
 from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 
-TASK = "SawyerPegsRoundEnv"
-DEMO_FILE = "/Users/ajaymandlekar/Desktop/pegs-RoundNut0.pkl"
-OUT_FILE = "/Users/ajaymandlekar/Desktop/pegs-RoundNut0-sars.pkl"
+TASK = "SawyerBinsCanEnv"
+DEMO_FILE = "/home/robot/Downloads/bins-Can0.pkl"
+OUT_FILE = "/home/robot/Downloads/bins-Can0-sars.pkl"
 
 if __name__ == "__main__":
     env = MujocoManipEnv(TASK)
@@ -73,6 +73,13 @@ if __name__ == "__main__":
                     sarsd.append((s, a, r, ns, 0))
                 s = np.array(ns)
 
+                ### TODO: fix this here and in ccr... ###
+                ### TODO: 1 is open, 0/-1 is closed ###
+                ### TODO: if gripper cmd, then close, otherwise open, playback a traj to verify ###
+
+                ### TODO: in ccr, mujoco sawyer env gripper commands are useless... ###
+                ### set it such that true closes gripper, false opens it.. ###
+
                 # extract action and reward
                 gripper_pos = [0., 0.] if ad['gripper_cmd'] else [1., -1.]
                 a = np.array(ad['controller_info']['joint_vel'].tolist() + gripper_pos)
@@ -98,7 +105,7 @@ if __name__ == "__main__":
 
     # finally, write all of the offsets to the small pickle file
     small_pkl = open(OUT_FILE, 'wb')
-    pickle.dump(offsets, small_pkl)
+    pickle.dump(offsets[:-1], small_pkl) # all but last, since thats the EOF
     big_pkl.close()
     small_pkl.close()
 

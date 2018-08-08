@@ -20,8 +20,11 @@ from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 USE_GPU = True
 U.set_gpu_mode(USE_GPU)
 
-EXPERIMENT_NAME = "pegs_round"
+EXPERIMENT_NAME = "pegs-demo"
 HORIZON = 250
+
+# DEMO_PATH = None
+DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
 
 def experiment(variant):
     # env = NormalizedBoxEnv(HalfCheetahEnv())
@@ -73,11 +76,11 @@ if __name__ == "__main__":
             batch_size=128,
             max_path_length=HORIZON - 1, # TODO: is this off by one? 
             discount=0.99,
-
             soft_target_tau=0.001,
             policy_lr=3E-4,
             qf_lr=3E-4,
             vf_lr=3E-4,
+            demo_path=DEMO_PATH, # path to demos
         ),
         net_size=300,
     )

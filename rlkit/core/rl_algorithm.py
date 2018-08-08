@@ -14,6 +14,7 @@ from rlkit.policies.base import ExplorationPolicy
 from rlkit.samplers.in_place import InPlacePathSampler
 
 from rlkit.envs.mujoco_manip_env import MujocoManipEnv
+from rlkit.demo import DemoSampler
 
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
@@ -37,6 +38,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             eval_sampler=None,
             eval_policy=None,
             replay_buffer=None,
+            demo_path=None,
     ):
         """
         Base class for RL Algorithms
@@ -102,6 +104,13 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 self.env,
             )
         self.replay_buffer = replay_buffer
+
+        self.demo_sampler = None
+        if demo_path is not None:
+            self.demo_sampler = DemoSampler(demo_path=demo_path, 
+                                            observation_dim=self.obs_space.shape[0], 
+                                            action_dim=self.action_space.shape[0], 
+                                            preload=True)
 
         self._n_env_steps_total = 0
         self._n_train_steps_total = 0
