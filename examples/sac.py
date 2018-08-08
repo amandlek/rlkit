@@ -20,11 +20,11 @@ from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 USE_GPU = True
 U.set_gpu_mode(USE_GPU)
 
-EXPERIMENT_NAME = "pegs-demo-short-train"
+EXPERIMENT_NAME = "lift-test"
 HORIZON = 250
 
-# DEMO_PATH = None
-DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
+DEMO_PATH = None
+# DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
 
 def experiment(variant):
     # env = NormalizedBoxEnv(HalfCheetahEnv())
@@ -33,7 +33,7 @@ def experiment(variant):
     # env = NormalizedBoxEnv(gym.make('HalfCheetah-v2'))
     # env = gym.make('HalfCheetah-v2')
 
-    env = MujocoManipEnv("SawyerPegsRoundEnv") # wrap as a gym env
+    env = MujocoManipEnv("SawyerLiftEnv") # wrap as a gym env
     obs_dim = int(np.prod(env.observation_space.shape))
     action_dim = int(np.prod(env.action_space.shape))
 
@@ -75,13 +75,14 @@ if __name__ == "__main__":
             num_steps_per_eval=HORIZON, # number of steps in eval?
             batch_size=128,
             max_path_length=HORIZON - 1, # TODO: is this off by one? 
-            num_updates_per_env_step=100, # batch learning steps per train step
+            num_updates_per_env_step=1,#100, # batch learning steps per train step
             discount=0.99,
             soft_target_tau=0.001,
             policy_lr=3E-4,
             qf_lr=3E-4,
             vf_lr=3E-4,
             demo_path=DEMO_PATH, # path to demos
+            action_skip=1, # number of env steps per policy action
         ),
         net_size=300,
     )

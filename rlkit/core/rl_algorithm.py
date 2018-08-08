@@ -39,6 +39,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             eval_policy=None,
             replay_buffer=None,
             demo_path=None,
+            action_skip=1,
     ):
         """
         Base class for RL Algorithms
@@ -111,6 +112,8 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                                             observation_dim=self.obs_space.shape[0], 
                                             action_dim=self.action_space.shape[0], 
                                             preload=True)
+        self.action_skip = action_skip
+        self.action_skip_count = 0
 
         self._n_env_steps_total = 0
         self._n_train_steps_total = 0
@@ -265,14 +268,19 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         :return:
         """
         self.exploration_policy.set_num_steps_total(self._n_env_steps_total)
-        return self.exploration_policy.get_action(
-            observation,
-        )
+
+        # logic for action skipping, only update the policy action every action_skip timesteps
+        if self.action_skip_count % self.action_skip == 0:
+            print(self.action_skip_count)
+            self.action_skip_action = self.exploration_policy.get_action(observation)
+        self.action_skip_count += 1
+        return self.action_skip_action
 
     def _start_epoch(self, epoch):
         self._epoch_start_time = time.time()
         self._exploration_paths = []
         self._do_train_time = 0
+        self.action_skip_count = 0
         logger.push_prefix('Iteration #%d | ' % epoch)
 
     def _end_epoch(self):
@@ -284,6 +292,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
 
     def _start_new_rollout(self):
         self.exploration_policy.reset()
+        self.action_skip_count = 0
         return self.training_env.reset()
 
     def _handle_path(self, path):
