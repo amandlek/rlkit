@@ -33,8 +33,17 @@ def rollout(env, agent, max_path_length=np.inf, animated=False):
     path_length = 0
     if animated:
         env.render()
+
+    action_skip_count = 0
+    action_skip = agent.action_skip
+
     while path_length < max_path_length:
-        a, agent_info = agent.get_action(o)
+        
+        # implement action skipping here
+        if action_skip_count % action_skip == 0:
+            a, agent_info = agent.get_action(o)
+        action_skip_count += 1
+
         next_o, r, d, env_info = env.step(a)
         observations.append(o)
         rewards.append(r)

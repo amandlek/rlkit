@@ -26,6 +26,9 @@ HORIZON = 250
 DEMO_PATH = None
 # DEMO_PATH = "/home/robot/Downloads/pegs-RoundNut0-sars.pkl"
 
+ACTION_SKIP = 1
+LR = 3E-4
+
 def experiment(variant):
     # env = NormalizedBoxEnv(HalfCheetahEnv())
     # Or for a specific version:
@@ -52,6 +55,7 @@ def experiment(variant):
         hidden_sizes=[net_size, net_size],
         obs_dim=obs_dim,
         action_dim=action_dim,
+        action_skip=ACTION_SKIP,
     )
     algorithm = SoftActorCritic(
         env=env,
@@ -78,11 +82,11 @@ if __name__ == "__main__":
             num_updates_per_env_step=1,#100, # batch learning steps per train step
             discount=0.99,
             soft_target_tau=0.001,
-            policy_lr=3E-4,
-            qf_lr=3E-4,
-            vf_lr=3E-4,
+            policy_lr=LR,
+            qf_lr=LR,
+            vf_lr=LR,
             demo_path=DEMO_PATH, # path to demos
-            action_skip=1, # number of env steps per policy action
+            action_skip=ACTION_SKIP, # number of env steps per policy action
         ),
         net_size=300,
     )

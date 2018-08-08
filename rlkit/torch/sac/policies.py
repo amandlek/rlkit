@@ -36,6 +36,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
             action_dim,
             std=None,
             init_w=1e-3,
+            action_skip=1, # dirty af, save this param here for accessing during rollouts
             **kwargs
     ):
         self.save_init_params(locals())
@@ -46,6 +47,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
             init_w=init_w,
             **kwargs
         )
+        self.action_skip = action_skip
         self.log_std = None
         self.std = std
         if std is None:

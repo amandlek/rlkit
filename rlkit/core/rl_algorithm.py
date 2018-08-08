@@ -16,6 +16,17 @@ from rlkit.samplers.in_place import InPlacePathSampler
 from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 from rlkit.demo import DemoSampler
 
+from tensorboardX import SummaryWriter
+
+import rlkit
+LOCAL_EXP_PATH = os.path.join(rlkit.__path__[0], "../experiments")
+#'/Users/yukez/TactileVisionProject/rlkit/experiments'
+
+t_now = time.time()
+time_str = datetime.datetime.fromtimestamp(t_now).strftime('%Y%m%d%H%M%S')
+os.mkdir(os.path.join(LOCAL_EXP_PATH, time_str))
+_writer = SummaryWriter(os.path.join(LOCAL_EXP_PATH, time_str))
+
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
             self,
@@ -237,6 +248,40 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             logger.record_tabular('Total Train Time (s)', total_time)
 
             logger.record_tabular("Epoch", epoch)
+
+            for k, v_str in logger._tabular:
+
+                if k == 'Epoch': continue
+
+                v = float(v_str)
+                if k.endswith('Loss'):
+                    _writer.add_scalar('Loss/{}'.format(k), v, epoch)
+                elif k.endswith('Max'):
+                    prefix = k[:-4]
+                    _writer.add_scalar('{}/{}'.format(prefix, k), v, epoch)
+                elif k.endswith('Min'):
+                    prefix = k[:-4]
+                    _writer.add_scalar('{}/{}'.format(prefix, k), v, epoch)
+                elif k.endswith('Std'):
+                    prefix = k[:-4]
+                    _writer.add_scalar('{}/{}'.format(prefix, k), v, epoch)
+                elif k.endswith('Mean'):
+                    prefix = k[:-5]
+                    _writer.add_scalar('{}/{}'.format(prefix, k), v, epoch)
+                elif 'Time' in k:
+                    _writer.add_scalar('Time/{}'.format(k), v, epoch)
+                elif k.startswith('Num'):
+                    _writer.add_scalar('Number/{}'.format(k), v, epoch)
+                elif k.startswith('Exploration'):
+                    _writer.add_scalar('Exploration/{}'.format(k), v, epoch)
+                elif k.startswith('Test'):
+                    _writer.add_scalar('Test/{}'.format(k), v, epoch)
+                else:
+                    _writer.add_scalar(k, v, epoch)
+
+            _writer.file_writer.flush()
+
+
             logger.dump_tabular(with_prefix=False, with_timestamp=False)
         else:
             logger.log("Skipping eval for now.")
@@ -271,9 +316,9 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
 
         # logic for action skipping, only update the policy action every action_skip timesteps
         if self.action_skip_count % self.action_skip == 0:
-            print(self.action_skip_count)
             self.action_skip_action = self.exploration_policy.get_action(observation)
         self.action_skip_count += 1
+
         return self.action_skip_action
 
     def _start_epoch(self, epoch):
