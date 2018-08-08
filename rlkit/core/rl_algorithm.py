@@ -20,12 +20,6 @@ from tensorboardX import SummaryWriter
 
 import rlkit
 LOCAL_EXP_PATH = os.path.join(rlkit.__path__[0], "../experiments")
-#'/Users/yukez/TactileVisionProject/rlkit/experiments'
-
-t_now = time.time()
-time_str = datetime.datetime.fromtimestamp(t_now).strftime('%Y%m%d%H%M%S')
-os.mkdir(os.path.join(LOCAL_EXP_PATH, time_str))
-_writer = SummaryWriter(os.path.join(LOCAL_EXP_PATH, time_str))
 
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
@@ -51,6 +45,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             replay_buffer=None,
             demo_path=None,
             action_skip=1,
+            experiment_name="default",
     ):
         """
         Base class for RL Algorithms
@@ -135,6 +130,11 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self._old_table_keys = None
         self._current_path_builder = PathBuilder()
         self._exploration_paths = []
+
+        t_now = time.time()
+        time_str = datetime.datetime.fromtimestamp(t_now).strftime('%Y%m%d%H%M%S')
+        os.makedirs(os.path.join(LOCAL_EXP_PATH, experiment_name, time_str))
+        self._writer = SummaryWriter(os.path.join(LOCAL_EXP_PATH, experiment_name, time_str))
 
     def train(self, start_epoch=0):
         self.pretrain()
@@ -249,6 +249,8 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
 
             logger.record_tabular("Epoch", epoch)
 
+            # tensorboard stuff
+            _writer = self._writer
             for k, v_str in logger._tabular:
 
                 if k == 'Epoch': continue

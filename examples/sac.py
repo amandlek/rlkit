@@ -87,6 +87,7 @@ if __name__ == "__main__":
             vf_lr=LR,
             demo_path=DEMO_PATH, # path to demos
             action_skip=ACTION_SKIP, # number of env steps per policy action
+            experiment_name=EXPERIMENT_NAME,
         ),
         net_size=300,
     )
