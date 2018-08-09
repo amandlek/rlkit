@@ -26,12 +26,14 @@ class TorchRLAlgorithm(RLAlgorithm, metaclass=abc.ABCMeta):
         else:
             # sample from demo buffer here
             # t = time.time()
-            batch1 = self.demo_sampler.get_batch(self.batch_size // 2)
-            batch2 = self.replay_buffer.random_batch(self.batch_size // 2)
-            batch = {}
-            for k in batch1:
-                batch[k] = np.concatenate([batch1[k], batch2[k]])
-            # batch = self.demo_sampler.get_batch(self.batch_size)
+            if self.mix_demo:
+                batch1 = self.demo_sampler.get_batch(self.batch_size // 2)
+                batch2 = self.replay_buffer.random_batch(self.batch_size // 2)
+                batch = {}
+                for k in batch1:
+                    batch[k] = np.concatenate([batch1[k], batch2[k]])
+            else:
+                batch = self.demo_sampler.get_batch(self.batch_size)
             # print("sample batch took {} seconds".format(time.time() - t))
         return np_to_pytorch_batch(batch)
 

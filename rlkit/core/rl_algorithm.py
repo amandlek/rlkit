@@ -48,6 +48,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             demo_path=None,
             action_skip=1,
             experiment_name="default",
+            mix_demo=False,
     ):
         """
         Base class for RL Algorithms
@@ -115,6 +116,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self.replay_buffer = replay_buffer
 
         self.demo_sampler = None
+        self.mix_demo = mix_demo
         if demo_path is not None:
             self.demo_sampler = DemoSampler(demo_path=demo_path, 
                                             observation_dim=self.obs_space.shape[0], 

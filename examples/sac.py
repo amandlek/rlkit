@@ -29,6 +29,7 @@ REWARD_SCALE = 1
 
 # DEMO_PATH = None
 DEMO_PATH = "/home/robot/Downloads/test_extraction/bins-Can0-sars.pkl"
+MIX_DEMO = True
 
 ACTION_SKIP = 1
 LR = 3E-4
@@ -93,6 +94,7 @@ if __name__ == "__main__":
             action_skip=ACTION_SKIP, # number of env steps per policy action
             experiment_name=EXPERIMENT_NAME,
             batch_reward_scale=REWARD_SCALE,
+            mix_demo=MIX_DEMO,
         ),
         net_size=300,
     )
