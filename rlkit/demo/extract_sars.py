@@ -11,9 +11,9 @@ import numpy as np
 from MujocoManip.miscellaneous.utils import postprocess_model_xml
 from rlkit.envs.mujoco_manip_env import MujocoManipEnv
 
-TASK = "SawyerBinsCanEnv"
-DEMO_FILE = "/home/robot/Downloads/bins-Can0.pkl"
-OUT_FILE = "/home/robot/Downloads/bins-Can0-sars.pkl"
+TASK = "SawyerBinsBreadEnv"
+DEMO_FILE = "/home/robot/Downloads/test_extraction/bins-Bread0.pkl"
+OUT_FILE = "/home/robot/Downloads/test_extraction/bins-Bread0-sars.pkl"
 
 if __name__ == "__main__":
     env = MujocoManipEnv(TASK)
