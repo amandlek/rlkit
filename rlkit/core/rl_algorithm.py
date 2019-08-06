@@ -1,12 +1,19 @@
 import abc
+import os
+import time
+import datetime
 from collections import OrderedDict
 
 import gtimer as gt
 
+from tensorboardX import SummaryWriter
+
+import rlkit
 from rlkit.core import logger, eval_util
 from rlkit.data_management.replay_buffer import ReplayBuffer
 from rlkit.samplers.data_collector import DataCollector
 
+LOCAL_EXP_PATH = os.path.join(rlkit.__path__[0], "../experiments")
 
 def _get_epoch_timings():
     times_itrs = gt.get_times().stamps.itrs
@@ -30,6 +37,7 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
             exploration_data_collector: DataCollector,
             evaluation_data_collector: DataCollector,
             replay_buffer: ReplayBuffer,
+            experiment_name="default",
     ):
         self.trainer = trainer
         self.expl_env = exploration_env
@@ -40,6 +48,13 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self._start_epoch = 0
 
         self.post_epoch_funcs = []
+
+        # tensorboard logging
+        t_now = time.time()
+        time_str = datetime.datetime.fromtimestamp(t_now).strftime('%Y%m%d%H%M%S')
+        exp_dir = os.path.join(LOCAL_EXP_PATH, experiment_name, time_str)
+        os.makedirs(exp_dir)
+        self.tb_writer = SummaryWriter(exp_dir)
 
     def train(self, start_epoch=0):
         self._start_epoch = start_epoch
@@ -66,13 +81,16 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
             post_epoch_func(self, epoch)
 
     def _get_snapshot(self):
+        # note: skip env keys in snapshot - we don't want to pickle robosuite envs
         snapshot = {}
         for k, v in self.trainer.get_snapshot().items():
             snapshot['trainer/' + k] = v
         for k, v in self.expl_data_collector.get_snapshot().items():
-            snapshot['exploration/' + k] = v
+            if k != 'env':
+                snapshot['exploration/' + k] = v
         for k, v in self.eval_data_collector.get_snapshot().items():
-            snapshot['evaluation/' + k] = v
+            if k != 'env':
+                snapshot['evaluation/' + k] = v
         for k, v in self.replay_buffer.get_snapshot().items():
             snapshot['replay_buffer/' + k] = v
         return snapshot
@@ -134,6 +152,12 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         gt.stamp('logging')
         logger.record_dict(_get_epoch_timings())
         logger.record_tabular('Epoch', epoch)
+
+        # record stats on tensorboard
+        for k, v in logger._tabular:
+            self.tb_writer.add_scalar(k, float(v), epoch)
+        self.tb_writer.file_writer.flush()
+
         logger.dump_tabular(with_prefix=False, with_timestamp=False)
 
     @abc.abstractmethod

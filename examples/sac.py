@@ -1,4 +1,9 @@
+import argparse
+import h5py
 from gym.envs.mujoco import HalfCheetahEnv
+
+import torch
+import robosuite
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
@@ -10,10 +15,39 @@ from rlkit.torch.sac.sac import SACTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 
+from rlkit.data_management.demo_buffer import DemoBuffer
+from rlkit.envs.robosuite_env import RobosuiteEnv
+
+def create_robosuite_env(data_path):
+    f = h5py.File(data_path, "r")  
+    env_name = f["data"].attrs["env"]
+    f.close()
+
+    env = robosuite.make(
+        env_name,
+        has_renderer=False,
+        has_offscreen_renderer=False,
+        ignore_done=False,
+        use_object_obs=True,
+        use_camera_obs=False,
+        camera_height=84,
+        camera_width=84,
+        camera_name="agentview",
+        gripper_visualization=False,
+        reward_shaping=True,
+        control_freq=100,
+        horizon=1000,
+    )
+    env = RobosuiteEnv(env)
+    return env
 
 def experiment(variant):
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+
+    demo_path = variant["batch"]
+    expl_env = create_robosuite_env(demo_path)
+    eval_env = create_robosuite_env(demo_path)
+    # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
+    # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -56,6 +90,12 @@ def experiment(variant):
         variant['replay_buffer_size'],
         expl_env,
     )
+
+    # make demonstration buffer to provide training data
+    # demo_buffer = None
+    demo_buffer = DemoBuffer(size=100000000)
+    demo_buffer.load_from_hdf5(demo_path)
+
     trainer = SACTrainer(
         env=eval_env,
         policy=policy,
@@ -72,6 +112,7 @@ def experiment(variant):
         exploration_data_collector=expl_path_collector,
         evaluation_data_collector=eval_path_collector,
         replay_buffer=replay_buffer,
+        demo_buffer=demo_buffer,
         **variant['algorithm_kwargs']
     )
     algorithm.to(ptu.device)
@@ -81,6 +122,24 @@ def experiment(variant):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--name",
+        type=str,
+    )
+    parser.add_argument(
+        "--batch",
+        type=str,
+    )
+    # parser.add_argument(
+    #     "--render",
+    #     action='store_true',
+    # )
+    args = parser.parse_args()
+
+    # cuda support
+    ptu.set_gpu_mode(torch.cuda.is_available())
+
     # noinspection PyTypeChecker
     variant = dict(
         algorithm="SAC",
@@ -95,6 +154,7 @@ if __name__ == "__main__":
             min_num_steps_before_training=1000,
             max_path_length=1000,
             batch_size=256,
+            experiment_name=args.name,
         ),
         trainer_kwargs=dict(
             discount=0.99,
@@ -105,7 +165,8 @@ if __name__ == "__main__":
             reward_scale=1,
             use_automatic_entropy_tuning=True,
         ),
+        batch=args.batch,
     )
-    setup_logger('name-of-experiment', variant=variant)
+    setup_logger(args.name, variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
     experiment(variant)

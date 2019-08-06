@@ -23,6 +23,8 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             num_trains_per_train_loop,
             num_train_loops_per_epoch=1,
             min_num_steps_before_training=0,
+            experiment_name="default",
+            demo_buffer=None,
     ):
         super().__init__(
             trainer,
@@ -31,6 +33,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             exploration_data_collector,
             evaluation_data_collector,
             replay_buffer,
+            experiment_name=experiment_name,
         )
         self.batch_size = batch_size
         self.max_path_length = max_path_length
@@ -40,6 +43,9 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
         self.num_train_loops_per_epoch = num_train_loops_per_epoch
         self.num_expl_steps_per_train_loop = num_expl_steps_per_train_loop
         self.min_num_steps_before_training = min_num_steps_before_training
+
+        # for sampling demonstrations for training offline
+        self.demo_buffer = demo_buffer
 
     def _train(self):
         if self.min_num_steps_before_training > 0:
@@ -75,8 +81,11 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
 
                 self.training_mode(True)
                 for _ in range(self.num_trains_per_train_loop):
-                    train_data = self.replay_buffer.random_batch(
-                        self.batch_size)
+                    if self.demo_buffer is not None:
+                        # sample random batch from demonstrations 
+                        train_data = self.demo_buffer.random_batch(self.batch_size)
+                    else:
+                        train_data = self.replay_buffer.random_batch(self.batch_size)
                     self.trainer.train(train_data)
                 gt.stamp('training', unique=False)
                 self.training_mode(False)

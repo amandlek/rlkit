@@ -26,6 +26,7 @@ class OnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             num_trains_per_train_loop,
             num_train_loops_per_epoch=1,
             min_num_steps_before_training=0,
+            experiment_name="default",
     ):
         super().__init__(
             trainer,
@@ -34,6 +35,7 @@ class OnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             exploration_data_collector,
             evaluation_data_collector,
             replay_buffer,
+            experiment_name=experiment_name,
         )
         self.batch_size = batch_size
         self.max_path_length = max_path_length
@@ -48,6 +50,7 @@ class OnlineRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             'Online training presumes num_trains_per_train_loop >= num_expl_steps_per_train_loop'
 
     def _train(self):
+        assert(False)
         self.training_mode(False)
         if self.min_num_steps_before_training > 0:
             self.expl_data_collector.collect_new_steps(
