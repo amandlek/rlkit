@@ -18,7 +18,7 @@ from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from rlkit.data_management.demo_buffer import DemoBuffer
 from rlkit.envs.robosuite_env import RobosuiteEnv
 
-def create_robosuite_env(data_path):
+def create_robosuite_env(data_path, horizon=1000):
     f = h5py.File(data_path, "r")  
     env_name = f["data"].attrs["env"]
     f.close()
@@ -36,7 +36,7 @@ def create_robosuite_env(data_path):
         gripper_visualization=False,
         reward_shaping=True,
         control_freq=100,
-        horizon=1000,
+        horizon=250,#1000,
     )
     env = RobosuiteEnv(env)
     return env
@@ -44,8 +44,9 @@ def create_robosuite_env(data_path):
 def experiment(variant):
 
     demo_path = variant["batch"]
-    expl_env = create_robosuite_env(demo_path)
-    eval_env = create_robosuite_env(demo_path)
+    horizon = variant["horizon"]
+    expl_env = create_robosuite_env(demo_path, horizon)
+    eval_env = create_robosuite_env(demo_path, horizon)
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size
@@ -113,6 +114,7 @@ def experiment(variant):
         evaluation_data_collector=eval_path_collector,
         replay_buffer=replay_buffer,
         demo_buffer=demo_buffer,
+        mix_data=variant['mix_data'],
         **variant['algorithm_kwargs']
     )
     algorithm.to(ptu.device)
@@ -131,10 +133,15 @@ if __name__ == "__main__":
         "--batch",
         type=str,
     )
-    # parser.add_argument(
-    #     "--render",
-    #     action='store_true',
-    # )
+    parser.add_argument(
+        "--horizon",
+        type=int,
+        default=1000,
+    )
+    parser.add_argument(
+        "--mix",
+        action='store_true',
+    )
     args = parser.parse_args()
 
     # cuda support
@@ -148,11 +155,11 @@ if __name__ == "__main__":
         replay_buffer_size=int(1E6),
         algorithm_kwargs=dict(
             num_epochs=3000,
-            num_eval_steps_per_epoch=5000,
+            num_eval_steps_per_epoch=10*args.horizon, #5000,
             num_trains_per_train_loop=1000,
             num_expl_steps_per_train_loop=1000,
             min_num_steps_before_training=1000,
-            max_path_length=1000,
+            max_path_length=args.horizon, #1000,
             batch_size=256,
             experiment_name=args.name,
         ),
@@ -166,6 +173,8 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
         batch=args.batch,
+        horizon=args.horizon,
+        mix_data=args.mix,
     )
     setup_logger(args.name, variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)

@@ -1,6 +1,7 @@
 import abc
 
 import gtimer as gt
+import numpy as np
 from rlkit.core.rl_algorithm import BaseRLAlgorithm
 from rlkit.data_management.replay_buffer import ReplayBuffer
 from rlkit.samplers.data_collector import PathCollector
@@ -25,6 +26,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             min_num_steps_before_training=0,
             experiment_name="default",
             demo_buffer=None,
+            mix_data=False,
     ):
         super().__init__(
             trainer,
@@ -46,6 +48,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
 
         # for sampling demonstrations for training offline
         self.demo_buffer = demo_buffer
+        self.mix_data = mix_data
 
     def _train(self):
         if self.min_num_steps_before_training > 0:
@@ -82,8 +85,15 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
                 self.training_mode(True)
                 for _ in range(self.num_trains_per_train_loop):
                     if self.demo_buffer is not None:
-                        # sample random batch from demonstrations 
-                        train_data = self.demo_buffer.random_batch(self.batch_size)
+                        if self.mix_data:
+                            train_data1 = self.replay_buffer.random_batch(self.batch_size // 2)
+                            train_data2 = self.demo_buffer.random_batch(self.batch_size // 2)
+                            train_data = {}
+                            for k in train_data1:
+                                train_data[k] = np.concatenate([train_data1[k], train_data2[k]], axis=0)
+                        else:
+                            # sample random batch from demonstrations 
+                            train_data = self.demo_buffer.random_batch(self.batch_size)
                     else:
                         train_data = self.replay_buffer.random_batch(self.batch_size)
                     self.trainer.train(train_data)
