@@ -9,7 +9,7 @@ from gym import spaces
 from robosuite.wrappers import Wrapper
 
 
-class RobosuiteEnv():
+class RobosuiteEnv:
     env = None
 
     def __init__(self, env, keys=None):
@@ -59,7 +59,7 @@ class RobosuiteEnv():
         # reset arm configuration to line up with demonstrations 
         self.env.set_robot_joint_positions([0, -1.18, 0.00, 2.18, 0.00, 0.57, 1.5708])
         ob_dict = self.env._get_observation()
-        
+
         return self._flatten_obs(ob_dict)
 
     def step(self, action):

@@ -16,9 +16,11 @@ from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 
 from rlkit.data_management.demo_buffer import DemoBuffer
-from rlkit.envs.robosuite_env import RobosuiteEnv
 
-def create_robosuite_env(data_path, horizon=1000):
+import batchRL
+from batchRL.envs.residual import RobosuiteEnv, ResidualRobosuiteEnv
+
+def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent=''):
     f = h5py.File(data_path, "r")  
     env_name = f["data"].attrs["env"]
     f.close()
@@ -36,17 +38,24 @@ def create_robosuite_env(data_path, horizon=1000):
         gripper_visualization=False,
         reward_shaping=True,
         control_freq=100,
-        horizon=250,#1000,
+        horizon=horizon,
     )
-    env = RobosuiteEnv(env)
+
+    if len(residual_agent):
+        env = ResidualRobosuiteEnv(env, algo=residual_algo, batch=data_path, agent=residual_agent)
+    else:
+        env = RobosuiteEnv(env)
     return env
 
 def experiment(variant):
 
     demo_path = variant["batch"]
     horizon = variant["horizon"]
-    expl_env = create_robosuite_env(demo_path, horizon)
-    eval_env = create_robosuite_env(demo_path, horizon)
+    residual_algo = variant["residual_algo"]
+    residual_agent = variant["residual_agent"]
+
+    expl_env = create_robosuite_env(data_path=demo_path, horizon=horizon, residual_algo=residual_algo, residual_agent=residual_agent)
+    eval_env = create_robosuite_env(data_path=demo_path, horizon=horizon, residual_algo=residual_algo, residual_agent=residual_agent)
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size
@@ -92,10 +101,13 @@ def experiment(variant):
         expl_env,
     )
 
-    # make demonstration buffer to provide training data
-    # demo_buffer = None
-    demo_buffer = DemoBuffer(size=100000000)
-    demo_buffer.load_from_hdf5(demo_path)
+    if len(residual_agent):
+        demo_buffer = None
+    else:
+        # make demonstration buffer to provide training data
+        # demo_buffer = None
+        demo_buffer = DemoBuffer(size=100000000)
+        demo_buffer.load_from_hdf5(demo_path)
 
     trainer = SACTrainer(
         env=eval_env,
@@ -142,6 +154,16 @@ if __name__ == "__main__":
         "--mix",
         action='store_true',
     )
+    parser.add_argument(
+        "--algo",
+        type=str,
+        default="gl", # residual RL: algo type
+    )
+    parser.add_argument(
+        "--agent",
+        type=str,
+        default="", # residual RL: agent path
+    )
     args = parser.parse_args()
 
     # cuda support
@@ -175,6 +197,8 @@ if __name__ == "__main__":
         batch=args.batch,
         horizon=args.horizon,
         mix_data=args.mix,
+        residual_algo=args.algo,
+        residual_agent=args.agent,
     )
     setup_logger(args.name, variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
