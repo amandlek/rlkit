@@ -9,9 +9,10 @@ from rlkit.core import logger
 
 from rlkit.envs.robosuite_env import RobosuiteEnv
 
-filename = str(uuid.uuid4())
+import batchRL
+from batchRL.envs.residual import RobosuiteEnv, ResidualRobosuiteEnv
 
-def create_robosuite_env(data_path):
+def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent=''):
     f = h5py.File(data_path, "r")  
     env_name = f["data"].attrs["env"]
     f.close()
@@ -29,9 +30,13 @@ def create_robosuite_env(data_path):
         gripper_visualization=False,
         reward_shaping=True,
         control_freq=100,
-        horizon=1000,
+        horizon=horizon,
     )
-    env = RobosuiteEnv(env)
+
+    if len(residual_agent):
+        env = ResidualRobosuiteEnv(env, algo=residual_algo, batch=data_path, agent=residual_agent)
+    else:
+        env = RobosuiteEnv(env)
     return env
 
 def simulate_policy(args, env=None):
@@ -64,7 +69,9 @@ if __name__ == "__main__":
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--batch', type=str,
                         help='path to the dataset')
+    parser.add_argument('--agent', type=str, default='',
+                        help='path to base agent for residual learning')
     args = parser.parse_args()
 
-    env = create_robosuite_env(args.batch)
+    env = create_robosuite_env(data_path=args.batch, horizon=args.H, residual_algo='gl', residual_agent=args.agent)
     simulate_policy(args, env=env)
