@@ -25,6 +25,9 @@ def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_age
     env_name = f["data"].attrs["env"]
     f.close()
 
+    # use visual versions of environments for training by default
+    env_name = env_name[:6] + "Visual" + env_name[6:]
+
     env = robosuite.make(
         env_name,
         has_renderer=False,
