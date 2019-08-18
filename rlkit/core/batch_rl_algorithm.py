@@ -18,6 +18,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             replay_buffer: ReplayBuffer,
             batch_size,
             max_path_length,
+            max_eval_path_length,
             num_epochs,
             num_eval_steps_per_epoch,
             num_expl_steps_per_train_loop,
@@ -39,6 +40,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
         )
         self.batch_size = batch_size
         self.max_path_length = max_path_length
+        self.max_eval_path_length = max_eval_path_length
         self.num_epochs = num_epochs
         self.num_eval_steps_per_epoch = num_eval_steps_per_epoch
         self.num_trains_per_train_loop = num_trains_per_train_loop
@@ -65,7 +67,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
                 save_itrs=True,
         ):
             self.eval_data_collector.collect_new_paths(
-                self.max_path_length,
+                self.max_eval_path_length,
                 self.num_eval_steps_per_epoch,
                 discard_incomplete_paths=True,
             )

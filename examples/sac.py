@@ -18,15 +18,19 @@ from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from rlkit.data_management.demo_buffer import DemoBuffer
 
 import batchRL
-from batchRL.envs.residual import RobosuiteEnv, ResidualRobosuiteEnv
+from batchRL.envs.residual import RobosuiteEnv, ResidualRobosuiteEnv, SequenceRobosuiteEnv
 
-def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent=''):
+def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent='', goal_seq=False, eval_env=False):
     f = h5py.File(data_path, "r")  
     env_name = f["data"].attrs["env"]
     f.close()
 
     # use visual versions of environments for training by default
     env_name = env_name[:6] + "Visual" + env_name[6:]
+
+    reward_shaping = True
+    if goal_seq and eval_env:
+        reward_shaping = False
 
     env = robosuite.make(
         env_name,
@@ -39,13 +43,15 @@ def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_age
         camera_width=84,
         camera_name="agentview",
         gripper_visualization=False,
-        reward_shaping=True,
+        reward_shaping=reward_shaping,
         control_freq=100,
         horizon=horizon,
     )
 
     if len(residual_agent):
         env = ResidualRobosuiteEnv(env, algo=residual_algo, batch=data_path, agent=residual_agent)
+    elif goal_seq:
+        env = SequenceRobosuiteEnv(env, hdf5_path=data_path, seq_length=30, imitation=eval_env)
     else:
         env = RobosuiteEnv(env)
     return env
@@ -54,11 +60,28 @@ def experiment(variant):
 
     demo_path = variant["batch"]
     horizon = variant["horizon"]
+    eval_horizon = variant["eval_horizon"]
     residual_algo = variant["residual_algo"]
     residual_agent = variant["residual_agent"]
+    goal_seq = variant["goal_seq"]
 
-    expl_env = create_robosuite_env(data_path=demo_path, horizon=horizon, residual_algo=residual_algo, residual_agent=residual_agent)
-    eval_env = create_robosuite_env(data_path=demo_path, horizon=horizon, residual_algo=residual_algo, residual_agent=residual_agent)
+    expl_env = create_robosuite_env(
+        data_path=demo_path, 
+        horizon=horizon, 
+        residual_algo=residual_algo, 
+        residual_agent=residual_agent, 
+        goal_seq=goal_seq,
+        eval_env=False,
+    )
+    eval_env = create_robosuite_env(
+        data_path=demo_path, 
+        horizon=eval_horizon, 
+        residual_algo=residual_algo, 
+        residual_agent=residual_agent, 
+        goal_seq=goal_seq,
+        eval_env=True,
+        # eval_env=False,
+    )
     # expl_env = NormalizedBoxEnv(HalfCheetahEnv())
     # eval_env = NormalizedBoxEnv(HalfCheetahEnv())
     obs_dim = expl_env.observation_space.low.size
@@ -108,9 +131,9 @@ def experiment(variant):
         demo_buffer = None
     else:
         # make demonstration buffer to provide training data
-        # demo_buffer = None
-        demo_buffer = DemoBuffer(size=100000000)
-        demo_buffer.load_from_hdf5(demo_path)
+        demo_buffer = None
+        # demo_buffer = DemoBuffer(size=100000000)
+        # demo_buffer.load_from_hdf5(demo_path)
 
     trainer = SACTrainer(
         env=eval_env,
@@ -136,8 +159,6 @@ def experiment(variant):
     algorithm.train()
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -154,8 +175,22 @@ if __name__ == "__main__":
         default=1000,
     )
     parser.add_argument(
+        "--eval_horizon",
+        type=int,
+        default=1000,
+    )
+    parser.add_argument(
+        "--eval_rollouts",
+        type=int,
+        default=1,
+    )
+    parser.add_argument(
         "--mix",
         action='store_true',
+    )
+    parser.add_argument(
+        "--seq",
+        action='store_true', # for goal-reaching training
     )
     parser.add_argument(
         "--algo",
@@ -180,11 +215,12 @@ if __name__ == "__main__":
         replay_buffer_size=int(1E6),
         algorithm_kwargs=dict(
             num_epochs=3000,
-            num_eval_steps_per_epoch=10*args.horizon, #5000,
+            num_eval_steps_per_epoch=(args.eval_rollouts * args.eval_horizon), #5000,
             num_trains_per_train_loop=1000,
             num_expl_steps_per_train_loop=1000,
             min_num_steps_before_training=1000,
             max_path_length=args.horizon, #1000,
+            max_eval_path_length=args.eval_horizon, #1000
             batch_size=256,
             experiment_name=args.name,
         ),
@@ -199,9 +235,11 @@ if __name__ == "__main__":
         ),
         batch=args.batch,
         horizon=args.horizon,
+        eval_horizon=args.eval_horizon,
         mix_data=args.mix,
         residual_algo=args.algo,
         residual_agent=args.agent,
+        goal_seq=args.seq,
     )
     setup_logger(args.name, variant=variant)
     # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
