@@ -10,9 +10,9 @@ from rlkit.core import logger
 from rlkit.envs.robosuite_env import RobosuiteEnv
 
 import batchRL
-from batchRL.envs.residual import RobosuiteEnv, ResidualRobosuiteEnv
+from batchRL.envs.residual import RobosuiteEnv, SequenceRobosuiteEnv, ResidualRobosuiteEnv
 
-def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent=''):
+def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_agent='', goal_seq=False, eval_env=False):
     f = h5py.File(data_path, "r")  
     env_name = f["data"].attrs["env"]
     f.close()
@@ -38,6 +38,8 @@ def create_robosuite_env(data_path, horizon=1000, residual_algo='', residual_age
 
     if len(residual_agent):
         env = ResidualRobosuiteEnv(env, algo=residual_algo, batch=data_path, agent=residual_agent)
+    elif goal_seq:
+        env = SequenceRobosuiteEnv(env, hdf5_path=data_path, seq_length=30, imitation=eval_env)
     else:
         env = RobosuiteEnv(env)
     return env
@@ -75,7 +77,11 @@ if __name__ == "__main__":
                         help='path to the dataset')
     parser.add_argument('--agent', type=str, default='',
                         help='path to base agent for residual learning')
+    parser.add_argument(
+        "--seq",
+        action='store_true', # for goal-reaching training
+    )
     args = parser.parse_args()
 
-    env = create_robosuite_env(data_path=args.batch, horizon=args.H, residual_algo='gl', residual_agent=args.agent)
+    env = create_robosuite_env(data_path=args.batch, horizon=args.H, residual_algo='gl', residual_agent=args.agent, goal_seq=args.seq, eval_env=True)
     simulate_policy(args, env=env)
